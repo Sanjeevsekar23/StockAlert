@@ -1,0 +1,290 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if report_mode|default(false) %}
+
+<h1>Inventory Reports</h1>
+<p class="text-secondary">Review stock movement history and expiry risk.</p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="card card-body"><span class="text-secondary">Remaining units in included batches</span><strong>{{ report_summary.remaining_units }}</strong></div></div>
+        <div class="col-md-4"><div class="card card-body"><span class="text-secondary">Estimated units at risk</span><strong>{{ report_summary.units_at_risk }}</strong></div></div>
+        <div class="col-md-4"><div class="card card-body"><span class="text-secondary">High risk, expired, or expiring today</span><strong>{{ report_summary.high_risk_batches }}</strong></div></div>
+    </div>
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">Stock Movement History</div>
+    <div class="card-body">
+        {% if movements %}
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                    <tr>
+                        <td>{{ m.created_at }}</td>
+                        <td>{{ m.sku }}</td>
+                        <td>{{ m.product_name }}</td>
+                        <td>
+                            <span class="badge {{ 'text-bg-success' if m.movement_type == 'IN' else 'text-bg-warning' }}">
+                                {{ 'Stock In' if m.movement_type == 'IN' else 'Stock Out' }}
+                            </span>
+                        </td>
+                        <td>{{ m.quantity }}</td>
+                        <td>{{ m.reason or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">No stock movements recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-bold">Expiry Waste Prediction</div>
+    <div class="card-body">
+        <p class="text-secondary">Daily usage is product-level stock OUT quantity in the previous 30 days divided by 30, applied to each batch. Movement history does not identify which batch was sold. Estimates are indicative, not guaranteed. With no recorded usage, expected consumption is zero and the remaining quantity may be at risk. High Risk means at least 75% of the batch is estimated at risk; At Risk means 25% to under 75%; Low Risk means under 25%.</p>
+
+        {% if batches %}
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Batch</th>
+                        <th>Remaining</th>
+                        <th>Expiry Date</th>
+                        <th>Days Remaining</th>
+                        <th>Daily Usage</th>
+                        <th>Estimated Units at Risk</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in batches %}
+                    <tr>
+                        <td>{{ b.product_name }}</td>
+                        <td>{{ b.sku }}</td>
+                        <td>{{ b.batch_number }}</td>
+                        <td>{{ b.quantity }}</td>
+                        <td>{{ b.expiry_date }}</td>
+                        <td>{{ b.days_remaining if b.days_remaining is not none else 'Invalid date' }}</td>
+                        <td>{{ "%.2f"|format(b.daily_usage) }}{% if not b.has_recent_out_history %} <span class="text-secondary">(no recorded OUT)</span>{% endif %}</td>
+                        <td>{{ b.estimated_at_risk }}</td>
+                        <td><span class="badge {{ 'text-bg-danger' if b.risk_status in ['Expired', 'High Risk'] else 'text-bg-warning' if b.risk_status in ['Expires Today', 'At Risk'] else 'text-bg-success' }}">{{ b.risk_status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">
+            No expiry batches available for prediction.
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+
+<h1>Product Management</h1>
+<p class="text-secondary">
+    Add products, monitor inventory, and record stock movements.
+</p>
+
+<!-- Add Product -->
+{% if session.get('role') == 'admin' %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">Add New Product</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('products') }}" class="row g-3">
+
+            <div class="col-md-3">
+                <label for="sku" class="form-label">SKU</label>
+                <input id="sku" name="sku" class="form-control"
+                       placeholder="e.g. SKU001" required>
+            </div>
+
+            <div class="col-md-3">
+                <label for="name" class="form-label">Product Name</label>
+                <input id="name" name="name" class="form-control"
+                       placeholder="Enter product name" required>
+            </div>
+
+            <div class="col-md-3">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" class="form-select" required>
+                    <option value="Grocery" selected>Grocery</option>
+                    <option value="Beverages">Beverages</option>
+                    <option value="Dairy">Dairy</option>
+                    <option value="Bakery">Bakery</option>
+                    <option value="Fruits & Vegetables">Fruits &amp; Vegetables</option>
+                    <option value="Personal Care">Personal Care</option>
+                    <option value="Household">Household</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Medicines">Medicines</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="min_stock" class="form-label">Minimum Stock</label>
+                <input id="min_stock" name="min_stock" type="number"
+                       min="0" value="5" class="form-control" required>
+            </div>
+
+            <div class="col-md-3">
+                <label for="selling_price" class="form-label">Selling Price (₹)</label>
+                <input id="selling_price" name="selling_price" type="number"
+                       min="0" step="0.01" value="0"
+                       class="form-control" required>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    Add Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Inventory -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">Inventory</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Stock</th>
+                        <th>Minimum</th>
+                        <th>Selling Price</th>
+                        <th>Stock Movement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td>{{ p.sku }}</td>
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.category }}</td>
+                        <td>
+                            <span class="badge {{ 'text-bg-danger' if p.quantity <= p.min_stock else 'text-bg-success' }}">
+                                {{ p.quantity }}
+                            </span>
+                        </td>
+                        <td>{{ p.min_stock }}</td>
+                        <td>₹{{ "%.2f"|format(p.selling_price) }}</td>
+                        <td>
+                            <form method="POST"
+                                  action="{{ url_for('stock_movement', product_id=p.id) }}"
+                                  class="d-flex flex-wrap gap-2">
+
+                                <select name="movement_type"
+                                        class="form-select form-select-sm"
+                                        aria-label="Movement type" required>
+                                    <option value="IN">Stock In</option>
+                                    <option value="OUT">Stock Out</option>
+                                </select>
+
+                                <input name="quantity" type="number" min="1"
+                                       placeholder="Qty"
+                                       class="form-control form-control-sm"
+                                       aria-label="Movement quantity" required>
+
+                                <input name="reason" type="text"
+                                       placeholder="Reason"
+                                       class="form-control form-control-sm"
+                                       aria-label="Movement reason">
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-primary">
+                                    Save
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-4">
+                            No products added yet. Use the form above to add your first product.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expiry Batch -->
+{% if session.get('role') == 'admin' %}
+<div class="card shadow-sm mt-4 mb-4">
+    <div class="card-header fw-bold">Add Expiry Batch</div>
+    <div class="card-body">
+
+        <form action="{{ url_for('add_batch') }}" method="POST">
+
+            <div class="mb-3">
+                <label for="product_id" class="form-label">Product</label>
+                <select id="product_id" name="product_id"
+                        class="form-select" required>
+                    <option value="">Select Product</option>
+                    {% for product in products %}
+                    <option value="{{ product.id }}">
+                        {{ product.name }} ({{ product.sku }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="batch_number" class="form-label">Batch Number</label>
+                <input id="batch_number" type="text" name="batch_number"
+                       class="form-control"
+                       placeholder="e.g. MILK-OCT-A" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="batch_quantity" class="form-label">Batch Quantity</label>
+                <input id="batch_quantity" type="number" name="quantity"
+                       class="form-control" min="1" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="expiry_date" class="form-label">Expiry Date</label>
+                <input id="expiry_date" type="date" name="expiry_date"
+                       class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Save Expiry Batch
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

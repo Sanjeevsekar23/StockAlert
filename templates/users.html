@@ -1,0 +1,176 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>{{ 'Staff Management' if is_admin else 'My Staff Profile' }}</h2>
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        {% if is_admin %}
+        <a class="btn btn-outline-primary" href="{{ url_for('view_attendance') }}">View Attendance</a>
+        {% else %}
+        <a class="btn btn-primary" href="{{ url_for('mark_attendance') }}">Mark Today's Attendance</a>
+        {% endif %}
+    </div>
+
+    {% if not is_admin and current_staff %}
+    <div class="card shadow-sm p-4 mb-4">
+        <h5 class="mb-3">My Profile</h5>
+        <p class="mb-1"><strong>Assigned location:</strong> {{ current_staff.work_location or 'Not assigned' }}</p>
+        <p class="mb-3"><strong>Status:</strong> {{ current_staff.staff_status }}</p>
+    </div>
+    {% endif %}
+
+    {% if is_admin %}
+    <div class="card shadow-sm p-4 mb-4">
+        <h5 class="mb-3">Create Staff Account</h5>
+
+        <form method="POST" action="{{ url_for('staff_management') }}">
+            <div class="mb-3">
+                <label for="username" class="form-label">
+                    Staff Username
+                </label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="username"
+                    name="username"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="age" class="form-label">Age</label>
+                <input id="age" name="age" type="number" min="18" max="100" step="1" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="contact_number" class="form-label">Contact Number</label>
+                <input id="contact_number" name="contact_number" type="tel" inputmode="tel" pattern="(?:\+91)?[6-9][0-9]{9}" maxlength="13" class="form-control" placeholder="9876543210 or +919876543210" required>
+                <div class="form-text">Enter a 10-digit Indian mobile number, optionally prefixed with +91.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="work_location" class="form-label">Work Location</label>
+                <input id="work_location" name="work_location" type="text" maxlength="120" class="form-control" placeholder="Store, warehouse, or branch (optional)">
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">
+                    Password
+                </label>
+                <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">
+                    Confirm Password
+                </label>
+                <input
+                    type="password"
+                    class="form-control"
+                    id="confirm_password"
+                    name="confirm_password"
+                    minlength="8"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                Create Staff Account
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if is_admin %}
+    <div class="card shadow-sm p-4">
+        <h5 class="mb-3">Existing Accounts</h5>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Age</th>
+                        <th>Contact Number</th>
+                        <th>Work Location</th>
+                        <th>Status</th>
+                        <th>Status Actions</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for member in staff_members %}
+                    <tr>
+                        <td>{{ member.username }}</td>
+                        <td>{{ member.role|capitalize }}</td>
+                        <td>{{ member.age if member.age is not none else '—' }}</td>
+                        <td>{{ member.contact_number or '—' }}</td>
+                        <td>
+                            {% if member.role == 'staff' %}
+                            <form method="post" action="{{ url_for('update_staff_location', user_id=member.id) }}" class="d-flex flex-column gap-2">
+                                <input class="form-control form-control-sm" name="work_location" maxlength="120" value="{{ member.work_location }}" placeholder="Work location" aria-label="Work location for {{ member.username }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Save Location</button>
+                            </form>
+                            {% else %}{{ member.work_location or 'Not assigned' }}{% endif %}
+                        </td>
+                        <td>{{ member.staff_status }}</td>
+                        <td>
+                            {% if member.role == 'staff' %}
+                            <form method="post" action="{{ url_for('update_staff_status', user_id=member.id) }}" class="d-flex flex-column gap-2">
+                                <select class="form-select form-select-sm" name="staff_status" aria-label="Status for {{ member.username }}">
+                                    {% for status in ['Active', 'On Leave', 'Inactive'] %}<option value="{{ status }}" {% if member.staff_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Save Status</button>
+                            </form>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>{{ member.created_at }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8">No accounts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm p-4 mt-4">
+        <h5 class="mb-3">Update Existing Staff Details</h5>
+        <p class="text-muted">Use this section to add or correct age and contact details, including for older accounts that do not have them yet.</p>
+        {% for member in staff_members if member.role == 'staff' %}
+        <details class="border rounded p-3 mb-2">
+            <summary class="fw-semibold">{{ member.username }} — Age: {{ member.age if member.age is not none else 'Not set' }}, Contact: {{ member.contact_number or 'Not set' }}</summary>
+            <form method="post" action="{{ url_for('update_staff', user_id=member.id) }}" class="row g-3 mt-1">
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label" for="age_{{ member.id }}">Age</label>
+                    <input id="age_{{ member.id }}" class="form-control" name="age" type="number" min="18" max="100" step="1" value="{{ member.age if member.age is not none else '' }}" required>
+                </div>
+                <div class="col-sm-6 col-lg-5">
+                    <label class="form-label" for="contact_{{ member.id }}">Contact Number</label>
+                    <input id="contact_{{ member.id }}" class="form-control" name="contact_number" type="tel" inputmode="tel" pattern="(?:\+91)?[6-9][0-9]{9}" maxlength="13" value="{{ member.contact_number or '' }}" required>
+                </div>
+                <div class="col-12"><button type="submit" class="btn btn-outline-primary">Save Staff Details</button></div>
+            </form>
+        </details>
+        {% else %}
+        <p class="text-muted mb-0">No staff accounts are available.</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

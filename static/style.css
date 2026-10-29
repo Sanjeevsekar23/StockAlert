@@ -1,0 +1,195 @@
+
+body {
+    background: #f4f7fb;
+    color: #243047;
+}
+
+.navbar-brand {
+    letter-spacing: 0.4px;
+}
+
+.site-header {
+    position: relative;
+    z-index: 1050;
+    min-height: 64px;
+}
+
+.site-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.menu-toggle {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-toggle span {
+    width: 19px;
+    height: 2px;
+    border-radius: 2px;
+    background: #f8f9fa;
+}
+
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(15, 20, 28, 0.48);
+}
+
+.drawer-overlay[hidden] {
+    display: none;
+}
+
+.site-drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1045;
+    display: flex;
+    flex-direction: column;
+    width: min(300px, 86vw);
+    padding: 1.25rem 1rem 1rem;
+    background: #212529;
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.2);
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    visibility: hidden;
+}
+
+.site-drawer.is-open {
+    transform: translateX(0);
+    visibility: visible;
+}
+
+.drawer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.drawer-section {
+    margin-top: 0.4rem;
+}
+
+.drawer-section-label {
+    display: block;
+    padding: 0.75rem 0.875rem 0.35rem;
+    color: #adb5bd;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.drawer-sub-links {
+    padding-left: 0.5rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+    margin-left: 0.875rem;
+}
+
+.drawer-sub-links .drawer-link {
+    padding-block: 0.6rem;
+    font-size: 0.95rem;
+}
+
+.drawer-link {
+    display: block;
+    padding: 0.75rem 0.875rem;
+    border-radius: 7px;
+    color: #e9ecef;
+    text-decoration: none;
+    transition: background-color 140ms ease, color 140ms ease;
+}
+
+.drawer-link:hover,
+.drawer-link:focus-visible {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.drawer-username {
+    margin: 0.75rem 0.25rem 0;
+    padding: 0.75rem 0.625rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    color: #adb5bd;
+    overflow-wrap: anywhere;
+}
+
+.drawer-signout {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+h1 {
+    font-weight: 750;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.cards .card {
+    background: white;
+    border: 1px solid #e3eaf3;
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 3px 12px rgba(30, 50, 80, 0.05);
+}
+
+.cards .card h3 {
+    color: #68758b;
+    font-size: 0.95rem;
+}
+
+.cards .card p {
+    color: #155eef;
+    font-size: 2rem;
+    font-weight: 750;
+    margin-bottom: 0;
+}
+
+table {
+    background: white;
+}
+
+.card {
+    border: 1px solid #e3eaf3;
+    border-radius: 12px;
+}
+
+footer {
+    font-size: 0.9rem;
+}
+
+@media (max-width: 576px) {
+    .site-header-inner {
+        padding-inline: 1rem;
+    }
+}

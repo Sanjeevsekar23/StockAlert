@@ -1,0 +1,95 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>StockAlert Dashboard</h1>
+<p>Inventory overview and alerts</p>
+
+<div class="cards">
+    <div class="card">
+        <h3>Total Products</h3>
+        <p>{{ total_products }}</p>
+    </div>
+    <div class="card">
+        <h3>Total Units in Stock</h3>
+        <p>{{ total_stock }}</p>
+    </div>
+    <div class="card">
+        <h3>Low-Stock Products</h3>
+        <p>{{ low_stock|length }}</p>
+    </div>
+    <div class="card">
+        <h3>Expired Batches</h3>
+        <p>{{ expired_batches|length }}</p>
+    </div>
+    <div class="card">
+        <h3>Batches Expiring in 30 Days</h3>
+        <p>{{ expiring_soon_batches|length }}</p>
+    </div>
+</div>
+
+<section class="mb-4">
+<h2 class="mb-3">Low-Stock Alerts</h2>
+{% if low_stock %}
+<div class="table-responsive">
+<table class="table table-striped table-hover align-middle mb-0">
+    <thead>
+        <tr><th>SKU</th><th>Product</th><th>Quantity</th><th>Minimum</th></tr>
+    </thead>
+    <tbody>
+    {% for product in low_stock %}
+        <tr>
+            <td>{{ product.sku }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.quantity }}</td>
+            <td>{{ product.min_stock }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p>All products are above their minimum stock thresholds.</p>
+{% endif %}
+</section>
+
+<section class="mb-4">
+<h2 class="mb-3">Expired Batches</h2>
+{% if expired_batches %}
+<div class="table-responsive">
+<table class="table table-striped table-hover align-middle mb-0">
+    <thead>
+        <tr><th>Product</th><th>Batch</th><th>Quantity</th><th>Expiry</th></tr>
+    </thead>
+    <tbody>
+    {% for batch in expired_batches %}
+        <tr>
+            <td>{{ batch.product_name }}</td>
+            <td>{{ batch.batch_number }}</td>
+            <td>{{ batch.quantity }}</td>
+            <td>{{ batch.expiry_date }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p>No expired batches with remaining quantity.</p>
+{% endif %}
+</section>
+
+<section class="mb-4">
+<h2 class="mb-3">Batches Expiring Today or in the Next 30 Days</h2>
+{% if expiring_soon_batches %}
+<div class="table-responsive">
+<table class="table table-striped table-hover align-middle mb-0">
+    <thead><tr><th scope="col">Product</th><th scope="col">Batch</th><th scope="col">Quantity</th><th scope="col">Expiry</th></tr></thead>
+    <tbody>
+    {% for batch in expiring_soon_batches %}
+    <tr><td>{{ batch.product_name }}</td><td>{{ batch.batch_number }}</td><td>{{ batch.quantity }}</td><td>{{ batch.expiry_date }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}<p>No batches expire today or within the next 30 days.</p>{% endif %}
+</section>
+{% endblock %}
