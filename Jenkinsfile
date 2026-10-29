@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        // Jenkins agents should have Python 3.9+ available on PATH.
-        PYTHON = 'python'
+        // Set to a Jenkins-service-accessible Python 3.9+ executable.
+        PYTHON = 'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
     }
 
     stages {
@@ -23,7 +23,10 @@ pipeline {
             steps {
                 bat '''
 @echo off
-where "%PYTHON%"
+if not exist "%PYTHON%" (
+    echo Python executable is missing or inaccessible: "%PYTHON%"
+    exit /b 1
+)
 "%PYTHON%" --version
 "%PYTHON%" -c "import sys; assert sys.version_info >= (3, 9), 'Python 3.9 or newer is required'; print(sys.version)"
 '''
